@@ -100,7 +100,6 @@ double quad1d(double x, void *params)
   assert(gsl_result == 0);
   
   // cout << "QUAD1D INTERVALS: " << workspace->size << endl;
-  // cout << "QUAD1D RES: " << res << endl;
   // cout << "QUAD1D ABSERR: " << std::scientific << abserr << endl;
 
   gsl_integration_workspace_free(workspace);
@@ -135,7 +134,6 @@ double quad2d(double xmin)
   assert(gsl_result == 0);
 
   // cout << "QUAD2D INTERVALS: " << workspace->size << endl;
-  // cout << "QUAD2D RES: " << res << endl;
   // cout << "QUAD2D ABSERR: " << std::scientific << abserr << endl;
   
   gsl_integration_workspace_free(workspace);
