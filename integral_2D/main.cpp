@@ -149,14 +149,11 @@ int main (int argc, char* argv[])
   epsabs = 5.0e-3;
   epsrel = 5.0e-3;
 
-  // Get xmin from the command line or by pompting for entry.
-  double xmin = 0.0;
+  double xmin = 1.0;
 
+  // Override default xmin from the command line
   if (argc == 2) {
     xmin = atof(argv[1]);
-  } else {
-    cout << "Enter XMIN: " << endl;
-    cin >> xmin;
   }
 
   double result = quad2d(xmin);
