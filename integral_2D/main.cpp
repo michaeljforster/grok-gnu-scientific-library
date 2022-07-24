@@ -34,8 +34,9 @@ double f(double x, double y)
 //    xval = 3;
 //    integrand.function = &((y) -> f(xval, y))
 //
-// One work-around for this limitation is to declare a global variable
-// and wrapper function referencing the global as a free variable.
+// Option 1: One work-around for this limitation is to declare a
+// global variable and wrapper function referencing the global as a
+// free variable. See "Option 1" in quad1d().
 //
 
 /*
@@ -47,8 +48,8 @@ double f(double x, double y)
   }
 */
 
-// Another way is to pass the x value via the "params" parameter.
-// See integrand.params = &x; in quad1d().
+// Option 2: Another way is to pass the x value via the "params"
+// parameter. See "Option 2" in quad1d().
 double f_y(double y, void * params)
 {
   double x = *(double *) params;
@@ -74,13 +75,13 @@ double quad1d(double x, void *params)
   double result;	
   double abserr;
 
-  // f_y(y) = f(x, y)
+  // Option 1: f_y(y) = f(x, y)
   // xval = x;
 
   gsl_function integrand;
   integrand.function = &f_y;
 
-  // f_y(y) = f(x, y)
+  // Option 2: f_y(y) = f(x, y)
   integrand.params = &x;
 
   gsl_integration_workspace *workspace;
