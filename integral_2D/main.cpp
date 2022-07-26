@@ -9,13 +9,13 @@
 using namespace std;
 
 //
-// Globals to be set in main().
+// Globals parameters, declared as constant expressions.
 //
 
-int key = 0;
-size_t limit = 0;
-double epsabs = 0.0;
-double epsrel = 0.0;
+constexpr int key = GSL_INTEG_GAUSS31; // 3
+constexpr size_t limit = 1000;
+constexpr double epsabs = 5.0e-3;
+constexpr double epsrel = 5.0e-3;
 
 //
 // The 2-ary function to be integrated, f(x, y).
@@ -144,12 +144,6 @@ double quad2d(double xmin)
 
 int main (int argc, char* argv[])
 {
-  // Set global parameters.
-  key = GSL_INTEG_GAUSS31; // 3
-  limit = 1000;
-  epsabs = 5.0e-3;
-  epsrel = 5.0e-3;
-
   double xmin = 1.0;
 
   // Override default xmin from the command line
