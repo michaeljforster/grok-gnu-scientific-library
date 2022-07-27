@@ -1,17 +1,19 @@
-//libraries and namespaces
+// Standard C headers
 #include <assert.h>
+#include <libgen.h> // basename()
+
+// Standard C++ headers
+#include <chrono>
 #include <cmath>
+#include <ctime>
 #include <fstream>
-#include <gsl/gsl_integration.h>
 #include <iomanip>
 #include <iostream>
 
-using namespace std;
+// Third-party C/C++ headers
+#include <gsl/gsl_integration.h>
 
-//
 // Globals parameters, declared as constant expressions.
-//
-
 constexpr int key = GSL_INTEG_GAUSS31; // 3
 constexpr size_t limit = 1000;
 constexpr double epsabs = 5.0e-3;
@@ -100,8 +102,8 @@ double quad1d(double x, void *params)
 
   assert(gsl_result == 0);
   
-  // cout << "QUAD1D INTERVALS: " << workspace->size << endl;
-  // cout << "QUAD1D ABSERR: " << std::scientific << abserr << endl;
+  // cout << "QUAD1D INTERVALS: " << workspace->size << std::endl;
+  // cout << "QUAD1D ABSERR: " << std::scientific << abserr << std::endl;
 
   gsl_integration_workspace_free(workspace);
 
@@ -134,8 +136,8 @@ double quad2d(double xmin)
   
   assert(gsl_result == 0);
 
-  // cout << "QUAD2D INTERVALS: " << workspace->size << endl;
-  // cout << "QUAD2D ABSERR: " << std::scientific << abserr << endl;
+  // cout << "QUAD2D INTERVALS: " << workspace->size << std::endl;
+  // cout << "QUAD2D ABSERR: " << std::scientific << abserr << std::endl;
   
   gsl_integration_workspace_free(workspace);
 
@@ -144,16 +146,65 @@ double quad2d(double xmin)
 
 int main (int argc, char* argv[])
 {
-  double xmin = 1.0;
+  //
+  // Capture and validate input.
+  //
 
-  // Override default xmin from the command line
-  if (argc == 2) {
-    xmin = atof(argv[1]);
+  if (argc < 3) {
+    std::cerr << "USAGE: " << argv[0] << " PRINT_HEADER(Y/N) XMIN" << std::endl;
+    return 1;
   }
 
+  std::string str_y ("y");
+  std::string str_Y ("Y");
+  std::string str_n ("n");
+  std::string str_N ("N");
+
+  char *command_name = basename(argv[0]);
+  char *print_header = argv[1];
+  double xmin = atof(argv[2]);
+  
+  if (str_y.compare(print_header) != 0 && str_Y.compare(print_header) != 0
+      && str_n.compare(print_header) != 0 && str_N.compare(print_header) != 0) {
+    std::cerr << "USAGE: " << argv[0] << " PRINT_HEADER(Y/N) XMIN" << std::endl;
+    return 1;
+  }
+  
+  //
+  // Process.
+  //
+  
   double result = quad2d(xmin);
 
-  cout << "RESULT: " << std::scientific << result << endl;
+  //
+  // Output parameters and results.
+  //
+
+  std::chrono::system_clock::time_point timestamp = std::chrono::system_clock::now();
+  time_t timestamp_tt = std::chrono::system_clock::to_time_t(timestamp);
+  std::tm timestamp_tm = *std::localtime(&timestamp_tt);
+  
+  if (str_y.compare(print_header) == 0 || str_Y.compare(print_header) == 0) {
+    std::cout << std::left     // column alignment
+	      << "timestamp" << '\t'
+	      << "command" << '\t'
+	      << "key" << '\t'
+	      << "limit" << '\t'
+	      << "epsabs" << '\t'
+	      << "epsrel" << '\t'
+	      << "xmin" << '\t'
+	      << "result" << std::endl;
+  }
+  
+  std::cout << std::left
+	    << std::put_time(&timestamp_tm, "%FT%T%z") << '\t'  // ISO 8601 date/time format
+	    << command_name << '\t'
+	    << key << '\t'
+	    << limit << '\t'
+	    << epsabs << '\t'
+	    << epsrel << '\t'
+	    << xmin << '\t'
+	    << std::scientific << result << std::endl;
 
   return 0;
 }
