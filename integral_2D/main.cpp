@@ -197,6 +197,11 @@ int main (int argc, char* argv[])
   // Output parameters and results.
   //
 
+  const char *command_name = basename(argv[0]);
+
+  // ISO 8601 date/time format
+  const char *fmt_iso_8601 = "%FT%T%z";
+  
   std::time_t timestamp_tt = std::time(nullptr);
   std::tm timestamp_tm = *std::localtime(&timestamp_tt);
 
@@ -212,10 +217,8 @@ int main (int argc, char* argv[])
 	      << "result" << std::endl;
   }
   
-  char *command_name = basename(argv[0]);
-  
   std::cout << std::left
-	    << std::put_time(&timestamp_tm, "%FT%T%z") << '\t'  // ISO 8601 date/time format
+	    << std::put_time(&timestamp_tm, fmt_iso_8601) << '\t'
 	    << command_name << '\t'
 	    << key << '\t'
 	    << limit << '\t'
