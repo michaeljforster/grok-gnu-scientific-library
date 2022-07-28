@@ -4,7 +4,6 @@
 #include <unistd.h> // getops()
 
 // Standard C++ headers
-#include <chrono>
 #include <cmath>
 #include <ctime>
 #include <fstream>
@@ -198,10 +197,9 @@ int main (int argc, char* argv[])
   // Output parameters and results.
   //
 
-  std::chrono::system_clock::time_point timestamp = std::chrono::system_clock::now();
-  time_t timestamp_tt = std::chrono::system_clock::to_time_t(timestamp);
+  std::time_t timestamp_tt = std::time(nullptr);
   std::tm timestamp_tm = *std::localtime(&timestamp_tt);
-  
+
   if (option_print_header == 1) {
     std::cout << std::left     // column alignment
 	      << "timestamp" << '\t'
