@@ -13,12 +13,6 @@
 // Third-party C/C++ headers
 #include <gsl/gsl_integration.h>
 
-// Globals parameters, declared as constant expressions.
-constexpr int key = GSL_INTEG_GAUSS31; // 3
-constexpr size_t limit = 1000;
-constexpr double epsabs = 5.0e-3;
-constexpr double epsrel = 5.0e-3;
-
 //
 // The 2-ary function to be integrated, f(x, y).
 //
@@ -72,23 +66,40 @@ double ymax(double x)
   return x;
 }
 
+struct quad1d_params {
+  double epsabs;
+  double epsrel;
+  size_t limit;
+  int key;
+};
+
 double quad1d(double x, void *params)
 {
+  struct quad1d_params *p = (struct quad1d_params *)params;
+  double epsabs = p->epsabs;
+  double epsrel = p->epsrel;
+  size_t limit = p->limit;
+  int key = p->key;
+
   double result;	
   double abserr;
 
-  // Option 1: f_y(y) = f(x, y)
-  // xval = x;
-
   gsl_function integrand;
   integrand.function = &f_y;
+
+  // Option 1: f_y(y) = f(x, y)
+  // xval = x;
 
   // Option 2: f_y(y) = f(x, y)
   integrand.params = &x;
 
   gsl_integration_workspace *workspace;
+
+  // TODO why 1000?  related to limit?
   workspace = gsl_integration_workspace_alloc(1000);
   
+  // int gsl_integration_qag(const gsl_function *f, double a, double b, double epsabs, double epsrel, size_t limit, int key,
+  //                         gsl_integration_workspace *workspace, double *result, double *abserr)
   int gsl_result = gsl_integration_qag(&integrand,
 				       ymin(x),
 				       ymax(x),
@@ -102,8 +113,11 @@ double quad1d(double x, void *params)
 
   assert(gsl_result == 0);
   
-  // cout << "QUAD1D INTERVALS: " << workspace->size << std::endl;
-  // cout << "QUAD1D ABSERR: " << std::scientific << abserr << std::endl;
+  // TODO workspace intervals?
+  std::cerr << "QUAD1D INTERVALS: " << workspace->size << std::endl;
+
+  // TODO quad1d abserr?
+  std::cerr << "QUAD1D ABSERR: " << std::scientific << abserr << std::endl;
 
   gsl_integration_workspace_free(workspace);
 
@@ -114,43 +128,48 @@ double quad1d(double x, void *params)
 // Integrate f(x, y) from x = xmin to x = infinity and y = ymin(x) to y = ymax(x)
 //
 
-double quad2d(double xmin)
+double quad2d(double xmin, double epsabs, double epsrel, size_t limit, int key, double *result, double *abserr)
 {
-  double result;	
-  double abserr;	
-
   gsl_function integrand;
   integrand.function = &quad1d;
+  struct quad1d_params quad1d_p = { epsabs, epsrel, limit, key };
+  integrand.params = &quad1d_p;
 
   gsl_integration_workspace *workspace;
+
+  // TODO why 1000?  related to limit?
   workspace = gsl_integration_workspace_alloc(1000);
-  
+
+  // int gsl_integration_qagiu(gsl_function *f, double a, double epsabs, double epsrel, size_t limit,
+  //                           gsl_integration_workspace *workspace, double *result, double *abserr)
   int gsl_result = gsl_integration_qagiu(&integrand,
 					 xmin,
 					 epsabs,
 					 epsrel,
 					 limit,
 					 workspace,
-					 &result,
-					 &abserr);
-  
-  assert(gsl_result == 0);
+					 result,
+					 abserr);
 
-  // cout << "QUAD2D INTERVALS: " << workspace->size << std::endl;
-  // cout << "QUAD2D ABSERR: " << std::scientific << abserr << std::endl;
+  // TODO workspace intervals?
+  std::cerr << "QUAD2D INTERVALS: " << workspace->size << std::endl;
   
   gsl_integration_workspace_free(workspace);
 
-  return result;
+  return gsl_result;
 }
 
 void cerr_usage(const char *command_name) {
-  std::cerr << "USAGE: " << command_name << " -h [-x xmin] input_file" << std::endl;
+  std::cerr << "USAGE: " << command_name << " -h [-x xmin] [-a epsabs] [-r epsrel] [-l limit] [-k key] input_file" << std::endl;
 }
 
 int main (int argc, char* argv[])
 {
   int option_print_header = 0;
+  double epsabs = 5.0e-3;
+  double epsrel = 5.0e-3;
+  size_t limit = 1000;
+  int key = GSL_INTEG_GAUSS31; // 3
   double xmin = 1.0;
 
   //
@@ -159,7 +178,7 @@ int main (int argc, char* argv[])
 
   int opt;
   
-  while ((opt = getopt(argc, argv, "hx:")) != -1) {
+  while ((opt = getopt(argc, argv, "hx:a:r:l:k:")) != -1) {
     switch (opt) {
     case 'h':
       option_print_header = 1;
@@ -167,8 +186,19 @@ int main (int argc, char* argv[])
     case 'x':
       xmin = atof(optarg);
       break;
+    case 'a':
+      epsabs = atof(optarg);
+      break;
+    case 'r':
+      epsrel = atof(optarg);
+      break;
+    case 'l':
+      limit = atoi(optarg);
+      break;
+    case 'k':
+      key = atoi(optarg);
+      break;
     default:
-      std::cerr << "Invalid option." << std::endl;
       cerr_usage(argv[0]);
       exit(EXIT_FAILURE);
     }
@@ -191,8 +221,15 @@ int main (int argc, char* argv[])
   // OPTIONAL: char *filename = argv[optind];
   // process input file ...
 
-  double result = quad2d(xmin);
+  double result;
+  double abserr;
 
+  int gsl_result = quad2d(xmin, epsabs, epsrel, limit, key, &result, &abserr);
+
+  assert(gsl_result == 0);
+
+  std::cerr << "QUAD2D ABSERR: " << std::scientific << abserr << std::endl;
+  
   //
   // Output parameters and results.
   //
@@ -209,22 +246,22 @@ int main (int argc, char* argv[])
     std::cout << std::left     // column alignment
 	      << "timestamp" << '\t'
 	      << "command" << '\t'
-	      << "key" << '\t'
-	      << "limit" << '\t'
+	      << "xmin" << '\t'
 	      << "epsabs" << '\t'
 	      << "epsrel" << '\t'
-	      << "xmin" << '\t'
+	      << "limit" << '\t'
+	      << "key" << '\t'
 	      << "result" << std::endl;
   }
   
   std::cout << std::left
 	    << std::put_time(&timestamp_tm, fmt_iso_8601) << '\t'
 	    << command_name << '\t'
-	    << key << '\t'
-	    << limit << '\t'
+	    << xmin << '\t'
 	    << epsabs << '\t'
 	    << epsrel << '\t'
-	    << xmin << '\t'
+	    << limit << '\t'
+	    << key << '\t'
 	    << std::scientific << result << std::endl;
 
   exit(EXIT_SUCCESS);
