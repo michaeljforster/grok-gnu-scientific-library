@@ -151,7 +151,7 @@ void cerr_usage(const char *command_name) {
 
 int main (int argc, char* argv[])
 {
-  int print_header = 0;
+  int option_print_header = 0;
   double xmin = 1.0;
 
   //
@@ -163,7 +163,7 @@ int main (int argc, char* argv[])
   while ((opt = getopt(argc, argv, "hx:")) != -1) {
     switch (opt) {
     case 'h':
-      print_header = 1;
+      option_print_header = 1;
       break;
     case 'x':
       xmin = atof(optarg);
@@ -202,7 +202,7 @@ int main (int argc, char* argv[])
   time_t timestamp_tt = std::chrono::system_clock::to_time_t(timestamp);
   std::tm timestamp_tm = *std::localtime(&timestamp_tt);
   
-  if (print_header == 1) {
+  if (option_print_header == 1) {
     std::cout << std::left     // column alignment
 	      << "timestamp" << '\t'
 	      << "command" << '\t'
