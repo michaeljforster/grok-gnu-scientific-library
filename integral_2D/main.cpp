@@ -13,6 +13,8 @@
 // Third-party C/C++ headers
 #include <gsl/gsl_integration.h>
 
+
+////////////////////////////////////////////////////////////////////////
 //
 // The 2-ary function to be integrated, f(x, y).
 //
@@ -21,6 +23,15 @@ double f(double x, double y)
 {
   return exp(-(x+y));
 }
+////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////
+//
+// QUAD2D Implementation
+//
+// TODO extract to a library.
+//
 
 //
 // If C++ supported true lambda expressions with closure (it cannot
@@ -158,6 +169,13 @@ double quad2d(double xmin, double epsabs, double epsrel, size_t limit, int key, 
 
   return gsl_result;
 }
+////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////
+//
+// Main for this program.
+//
 
 void cerr_usage(const char *command_name) {
   std::cerr << "USAGE: " << command_name << " -h [-x xmin] [-a epsabs] [-r epsrel] [-l limit] [-k key] input_file" << std::endl;
