@@ -1,6 +1,7 @@
 // Standard C headers
 #include <assert.h>
 #include <libgen.h> // basename()
+#include <unistd.h> // getops()
 
 // Standard C++ headers
 #include <chrono>
@@ -144,36 +145,53 @@ double quad2d(double xmin)
   return result;
 }
 
+void cerr_usage(const char *command_name) {
+  std::cerr << "USAGE: " << command_name << " -h [-x xmin] input_file" << std::endl;
+}
+
 int main (int argc, char* argv[])
 {
+  int print_header = 0;
+  double xmin = 1.0;
+
   //
-  // Capture and validate input.
+  // Get command-line options.
   //
 
-  if (argc < 3) {
-    std::cerr << "USAGE: " << argv[0] << " PRINT_HEADER(Y/N) XMIN" << std::endl;
-    return 1;
-  }
-
-  std::string str_y ("y");
-  std::string str_Y ("Y");
-  std::string str_n ("n");
-  std::string str_N ("N");
-
-  char *command_name = basename(argv[0]);
-  char *print_header = argv[1];
-  double xmin = atof(argv[2]);
+  int opt;
   
-  if (str_y.compare(print_header) != 0 && str_Y.compare(print_header) != 0
-      && str_n.compare(print_header) != 0 && str_N.compare(print_header) != 0) {
-    std::cerr << "USAGE: " << argv[0] << " PRINT_HEADER(Y/N) XMIN" << std::endl;
-    return 1;
+  while ((opt = getopt(argc, argv, "hx:")) != -1) {
+    switch (opt) {
+    case 'h':
+      print_header = 1;
+      break;
+    case 'x':
+      xmin = atof(optarg);
+      break;
+    default:
+      std::cerr << "Invalid option." << std::endl;
+      cerr_usage(argv[0]);
+      exit(EXIT_FAILURE);
+    }
   }
   
+  //
+  // OPTIONAL: Get command-line arguments following options.
+  //
+
+  // if (optind >= argc) {
+  //   std::cerr << "Expected argument after options." << std::endl;
+  //   cerr_usage(argv[0]);
+  //   exit(EXIT_FAILURE);
+  // }
+
   //
   // Process.
   //
-  
+
+  // OPTIONAL: char *filename = argv[optind];
+  // process input file ...
+
   double result = quad2d(xmin);
 
   //
@@ -184,7 +202,7 @@ int main (int argc, char* argv[])
   time_t timestamp_tt = std::chrono::system_clock::to_time_t(timestamp);
   std::tm timestamp_tm = *std::localtime(&timestamp_tt);
   
-  if (str_y.compare(print_header) == 0 || str_Y.compare(print_header) == 0) {
+  if (print_header == 1) {
     std::cout << std::left     // column alignment
 	      << "timestamp" << '\t'
 	      << "command" << '\t'
@@ -196,6 +214,8 @@ int main (int argc, char* argv[])
 	      << "result" << std::endl;
   }
   
+  char *command_name = basename(argv[0]);
+  
   std::cout << std::left
 	    << std::put_time(&timestamp_tm, "%FT%T%z") << '\t'  // ISO 8601 date/time format
 	    << command_name << '\t'
@@ -206,5 +226,5 @@ int main (int argc, char* argv[])
 	    << xmin << '\t'
 	    << std::scientific << result << std::endl;
 
-  return 0;
+  exit(EXIT_SUCCESS);
 }
