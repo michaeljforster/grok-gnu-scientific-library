@@ -125,10 +125,10 @@ double quad1d(double x, void *params)
   assert(gsl_result == 0);
   
   // TODO workspace intervals?
-  std::cerr << "QUAD1D INTERVALS: " << workspace->size << std::endl;
+  // std::cerr << "QUAD1D INTERVALS: " << workspace->size << std::endl;
 
   // TODO quad1d abserr?
-  std::cerr << "QUAD1D ABSERR: " << std::scientific << abserr << std::endl;
+  // std::cerr << "QUAD1D ABSERR: " << std::scientific << abserr << std::endl;
 
   gsl_integration_workspace_free(workspace);
 
@@ -163,7 +163,10 @@ double quad2d(double xmin, double epsabs, double epsrel, size_t limit, int key, 
 					 abserr);
 
   // TODO workspace intervals?
-  std::cerr << "QUAD2D INTERVALS: " << workspace->size << std::endl;
+  // std::cerr << "QUAD2D INTERVALS: " << workspace->size << std::endl;
+
+  // TODO QUAD2D abserr?
+  // std::cerr << "QUAD2D ABSERR: " << std::scientific << abserr << std::endl;
   
   gsl_integration_workspace_free(workspace);
 
@@ -178,11 +181,13 @@ double quad2d(double xmin, double epsabs, double epsrel, size_t limit, int key, 
 //
 
 void cerr_usage(const char *command_name) {
-  std::cerr << "USAGE: " << command_name << " -h [-x xmin] [-a epsabs] [-r epsrel] [-l limit] [-k key] input_file" << std::endl;
+  std::cerr << "usage: " << command_name << " -H [-A epsabs] [-R epsrel] [-L limit] [-K key] [-x xmin] input_file" << std::endl;
 }
 
 int main (int argc, char* argv[])
 {
+  const char *command_name = basename(argv[0]);
+
   int option_print_header = 0;
   double epsabs = 5.0e-3;
   double epsrel = 5.0e-3;
@@ -196,28 +201,28 @@ int main (int argc, char* argv[])
 
   int opt;
   
-  while ((opt = getopt(argc, argv, "hx:a:r:l:k:")) != -1) {
+  while ((opt = getopt(argc, argv, "HA:R:L:K:x:")) != -1) {
     switch (opt) {
-    case 'h':
+    case 'H':
       option_print_header = 1;
+      break;
+    case 'A':
+      epsabs = atof(optarg);
+      break;
+    case 'R':
+      epsrel = atof(optarg);
+      break;
+    case 'L':
+      limit = atoi(optarg);
+      break;
+    case 'K':
+      key = atoi(optarg);
       break;
     case 'x':
       xmin = atof(optarg);
       break;
-    case 'a':
-      epsabs = atof(optarg);
-      break;
-    case 'r':
-      epsrel = atof(optarg);
-      break;
-    case 'l':
-      limit = atoi(optarg);
-      break;
-    case 'k':
-      key = atoi(optarg);
-      break;
     default:
-      cerr_usage(argv[0]);
+      cerr_usage(command_name);
       exit(EXIT_FAILURE);
     }
   }
@@ -228,7 +233,7 @@ int main (int argc, char* argv[])
 
   // if (optind >= argc) {
   //   std::cerr << "Expected argument after options." << std::endl;
-  //   cerr_usage(argv[0]);
+  //   cerr_usage(command_name);
   //   exit(EXIT_FAILURE);
   // }
 
@@ -246,13 +251,9 @@ int main (int argc, char* argv[])
 
   assert(gsl_result == 0);
 
-  std::cerr << "QUAD2D ABSERR: " << std::scientific << abserr << std::endl;
-  
   //
   // Output parameters and results.
   //
-
-  const char *command_name = basename(argv[0]);
 
   // ISO 8601 date/time format
   const char *fmt_iso_8601 = "%FT%T%z";
