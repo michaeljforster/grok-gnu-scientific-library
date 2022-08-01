@@ -108,7 +108,14 @@ int quad2d(quad2d_function * fxy,
 	   double *result)
 {
   double abserr;
-  
+
+  assert((key == GSL_INTEG_GAUSS15) ||
+	 (key == GSL_INTEG_GAUSS21) ||
+	 (key == GSL_INTEG_GAUSS31) ||
+	 (key == GSL_INTEG_GAUSS41) ||
+	 (key == GSL_INTEG_GAUSS51) ||
+	 (key == GSL_INTEG_GAUSS61));
+
   fx_params fx_p = { fxy, ymin, ymax, epsabs, epsrel, limit, key };
 
   gsl_function FX;
