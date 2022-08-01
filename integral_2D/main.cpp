@@ -57,7 +57,7 @@ double ymax(double x)
 void cerr_usage(const char *command_name) {
   std::cerr << "usage: "
 	    << command_name
-	    << " -H [-A epsabs] [-R epsrel] [-L limit] [-K key] [-x xmin] input_file"
+	    << " -H [-A epsabs] [-R epsrel] [-L limit] [-K 1|2|3|4|5|6] [-x xmin] input_file"
 	    << std::endl;
 }
 
@@ -94,6 +94,15 @@ int main (int argc, char* argv[])
       break;
     case 'K':
       key = atoi(optarg);
+      if (!((key == GSL_INTEG_GAUSS15) ||
+	    (key == GSL_INTEG_GAUSS21) ||
+	    (key == GSL_INTEG_GAUSS31) ||
+	    (key == GSL_INTEG_GAUSS41) ||
+	    (key == GSL_INTEG_GAUSS51) ||
+	    (key == GSL_INTEG_GAUSS61))) {
+	cerr_usage(command_name);
+	exit(EXIT_FAILURE);
+      }
       break;
     case 'x':
       xmin = atof(optarg);
@@ -131,8 +140,10 @@ int main (int argc, char* argv[])
 
   int status = quad2d(&FXY, xmin, &ymin, &ymax, epsabs, epsrel, limit, key, &result);
 
-  // std::cout << "STATUS: " << gsl_strerror(status) << " (" << status << ")" << std::endl;
-  assert(status == GSL_SUCCESS);
+  if (status != GSL_SUCCESS) {
+    std::cerr << "FAILED: " << gsl_strerror(status) << " (" << status << ")" << std::endl;
+    exit(EXIT_FAILURE);
+  }  
   
   //
   // Output parameters and results.
