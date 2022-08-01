@@ -11,60 +11,33 @@
 #include <iostream>
 
 // Third-party C/C++ headers
+#include <gsl/gsl_errno.h> // gsl_strerror(), GSL_SUCCESS, etc.
 #include <gsl/gsl_integration.h>
 
+// Project headers
+#include "quad2d.h"
 
-////////////////////////////////////////////////////////////////////////
 //
-// The 2-ary function to be integrated, f(x, y).
+// 1. The 2D function to integrate.
 //
 
-double f(double x, double y)
+double f (double x, double y, double z)
 {
-  return exp(-(x+y));
-}
-////////////////////////////////////////////////////////////////////////
-
-
-////////////////////////////////////////////////////////////////////////
-//
-// QUAD2D Implementation
-//
-// TODO extract to a library.
-//
-
-//
-// If C++ supported true lambda expressions with closure (it cannot
-// because it cannot solve the "upwards funargs" problem), we could
-// write something like:
-//
-//    xval = 3;
-//    integrand.function = &((y) -> f(xval, y))
-//
-// Option 1: One work-around for this limitation is to declare a
-// global variable and wrapper function referencing the global as a
-// free variable. See "Option 1" in quad1d().
-//
-
-/*
-  double xval = 1;
-
-  double f_y(double y, void *params) 
-  {
-  return f(xval, y);
-  }
-*/
-
-// Option 2: Another way is to pass the x value via the "params"
-// parameter. See "Option 2" in quad1d().
-double f_y(double y, void * params)
-{
-  double x = *(double *) params;
-  return f(x, y);
+  return exp(-(x+y)) * z;
 }
 
 //
-// Integrate f_y(y) from y = ymin(x) to ymax(x) where f_y(y) = f(x, y)
+// 2. Adapt the function for quad2d
+//
+
+double f_2d (double x, double y, void * params)
+{
+  double z = *(double *)params;
+  return f(x, y, z);
+}
+
+//
+// 3. The ymin and ymax functions.
 //
 
 double ymin(double x)
@@ -77,111 +50,15 @@ double ymax(double x)
   return x;
 }
 
-struct quad1d_params {
-  double epsabs;
-  double epsrel;
-  size_t limit;
-  int key;
-};
-
-double quad1d(double x, void *params)
-{
-  struct quad1d_params *p = (struct quad1d_params *)params;
-  double epsabs = p->epsabs;
-  double epsrel = p->epsrel;
-  size_t limit = p->limit;
-  int key = p->key;
-
-  double result;	
-  double abserr;
-
-  gsl_function integrand;
-  integrand.function = &f_y;
-
-  // Option 1: f_y(y) = f(x, y)
-  // xval = x;
-
-  // Option 2: f_y(y) = f(x, y)
-  integrand.params = &x;
-
-  gsl_integration_workspace *workspace;
-
-  // TODO why 1000?  related to limit?
-  workspace = gsl_integration_workspace_alloc(1000);
-  
-  // int gsl_integration_qag(const gsl_function *f, double a, double b, double epsabs, double epsrel, size_t limit, int key,
-  //                         gsl_integration_workspace *workspace, double *result, double *abserr)
-  int gsl_result = gsl_integration_qag(&integrand,
-				       ymin(x),
-				       ymax(x),
-				       epsabs,
-				       epsrel,
-				       limit,
-				       key,
-				       workspace,
-				       &result,
-				       &abserr);
-
-  assert(gsl_result == 0);
-  
-  // TODO workspace intervals?
-  // std::cerr << "QUAD1D INTERVALS: " << workspace->size << std::endl;
-
-  // TODO quad1d abserr?
-  // std::cerr << "QUAD1D ABSERR: " << std::scientific << abserr << std::endl;
-
-  gsl_integration_workspace_free(workspace);
-
-  return result;
-}
-
 //
-// Integrate f(x, y) from x = xmin to x = infinity and y = ymin(x) to y = ymax(x)
-//
-
-double quad2d(double xmin, double epsabs, double epsrel, size_t limit, int key, double *result, double *abserr)
-{
-  gsl_function integrand;
-  integrand.function = &quad1d;
-  struct quad1d_params quad1d_p = { epsabs, epsrel, limit, key };
-  integrand.params = &quad1d_p;
-
-  gsl_integration_workspace *workspace;
-
-  // TODO why 1000?  related to limit?
-  workspace = gsl_integration_workspace_alloc(1000);
-
-  // int gsl_integration_qagiu(gsl_function *f, double a, double epsabs, double epsrel, size_t limit,
-  //                           gsl_integration_workspace *workspace, double *result, double *abserr)
-  int gsl_result = gsl_integration_qagiu(&integrand,
-					 xmin,
-					 epsabs,
-					 epsrel,
-					 limit,
-					 workspace,
-					 result,
-					 abserr);
-
-  // TODO workspace intervals?
-  // std::cerr << "QUAD2D INTERVALS: " << workspace->size << std::endl;
-
-  // TODO QUAD2D abserr?
-  // std::cerr << "QUAD2D ABSERR: " << std::scientific << abserr << std::endl;
-  
-  gsl_integration_workspace_free(workspace);
-
-  return gsl_result;
-}
-////////////////////////////////////////////////////////////////////////
-
-
-////////////////////////////////////////////////////////////////////////
-//
-// Main for this program.
+// 4. The program.
 //
 
 void cerr_usage(const char *command_name) {
-  std::cerr << "usage: " << command_name << " -H [-A epsabs] [-R epsrel] [-L limit] [-K key] [-x xmin] input_file" << std::endl;
+  std::cerr << "usage: "
+	    << command_name
+	    << " -H [-A epsabs] [-R epsrel] [-L limit] [-K key] [-x xmin] input_file"
+	    << std::endl;
 }
 
 int main (int argc, char* argv[])
@@ -245,12 +122,18 @@ int main (int argc, char* argv[])
   // process input file ...
 
   double result;
-  double abserr;
 
-  int gsl_result = quad2d(xmin, epsabs, epsrel, limit, key, &result, &abserr);
+  double z = 42.1;
+  
+  quad2d_function FXY;
+  FXY.function = &f_2d;
+  FXY.params = &z;
 
-  assert(gsl_result == 0);
+  int status = quad2d(&FXY, xmin, &ymin, &ymax, epsabs, epsrel, limit, key, &result);
 
+  // std::cout << "STATUS: " << gsl_strerror(status) << " (" << status << ")" << std::endl;
+  assert(status == GSL_SUCCESS);
+  
   //
   // Output parameters and results.
   //
